@@ -1,18 +1,24 @@
 /*
  * YusukeKato
- * BLACK JACK
+ * BLACK_JACK
  * C
  * 2016.3.
  * 2016.5.11
+ */
+ 
+/*
+ * ゲームの種類を増やす
  */
 
 /*
  * Ace 1or11 できた
  * 掛け金設定 できた
  * 11-13 → 10 できた
- * とりあえず基本機能は完成
- * お金に対応してディーラーが話しかけてくる
- * 不具合はだいたい直した
+ * とりあえず基本機能は完成 できた
+ * お金に対応してディーラーが話しかけてくる できた
+ * 不具合はだいたい直す できた
+ * 合計が21を超えた場合は終了させる できた
+ * 2枚で21になったら[!!BRACKJACK!!]を表示する できた
  */
 
 #include <stdio.h>
@@ -36,6 +42,8 @@ int main(void)
 	int aceNum = 0;//Aceの配列番号を保存
 	int flag_ace = 0;//flag_ace = 1 → Ace = 11
 	int flag_money = 0;//ディーラーイベント、お金に応じて
+	int flag_21 = 0;//21を超えたら終了
+	int flag_game = 1;//gameの種類を決める
 	
 	while(qq!=0){//一番大きいwhileループ
 		for(i=0; i<100; i++){//配列の初期化、他の方法がある
@@ -50,21 +58,36 @@ int main(void)
 				);
 		enterkey();
 		/* ゲームをするかどうか */
-		printf( "\n ゲームで遊びますか？\n"
+		printf( "\n ディーラー「遊んでいくか？」\n"
 				"\n 1.遊ぶ\n"
 				"\n 2.遊ばない\n"
 				);
 		printf( "\n 入力：");
 		scanf( "%d",&sele);
+		enterkey();
+		if(sele == 1){
+			printf( "\n ディーラー「どれにする？」\n"
+					"\n 1.BRACKJACK\n"
+					"\n 2.BRACKJACK 1枚目隠し\n"
+					"\n 3.BRACKJACK 3枚目から隠し\n"
+					"\n 入力："
+					);
+			scanf("%d",&flag_game);
+		}//if
+		if(!(flag_game==1||flag_game==2||flag_game==3)){
+			printf("\n ディーラー「それはないぜ」\n");
+			exit(0);
+		}//if
 		if(sele == 1){//ゲームをするときだけ
+			printf("\n ディーラー「俺と勝負だ」\n");
 			/* 掛け金設定 */
 			printf( "\n お金：%d \n",money);
-			printf( "\n 掛け金を入力してください\n"
+			printf( "\n ディーラー「掛け金を決めな」\n"
 					"\n 入力："
 					);
 			scanf("%d",&bed_money);
 			if(bed_money > money){
-				printf("\n お金が足りません・・・・・・\n");
+				printf("\n ディーラー「金が足りないぜ」\n");
 				break;
 			}
 			enterkey();
@@ -86,7 +109,8 @@ int main(void)
 					/* Aceの処理 */
 					if(pRand[i] == 1){
 						aceNum = i;//Aceが配列のどこに入ったか保存
-						printf("\n Ace(1or11)\n");
+						if(flag_game == 1||(flag_game == 2||i < 2)||(flag_game == 3&&i != 0))
+							printf("\n Ace(1or11)\n");
 						pRand[i] = 11;
 						flag_ace = 1;//11の時はフラグを立てる
 						/* playerの合計を求める */
@@ -96,63 +120,91 @@ int main(void)
 						}//for
 						if(sum > 21){//21超えていたら、1にする
 							pRand[i] = 1;
-							flag_ace = 0;//1の時はフラグは0
+							flag_ace = 0;//(1or11)1の時はフラグは0
 						}//if
-					}
+					}//if
+					/* 2枚で21ならBRACKJACK */
+					if(i==1&&(pRand[0]==11&&pRand[1]==10||pRand[0]==10&&pRand[1]==11)){
+						system("cls");
+						printf( "\n--------------------------------------------------\n"
+								"\n		!!!!! BRACK JACK !!!!!\n"
+								"\n--------------------------------------------------\n"
+								);
+						enterkey();
+					}//if
 					/* 3つ目の数字から隠す場合はここを活用する */
-					if(i<2){
+					if(flag_game == 1)
 						printf( "\n %dつ目の値：%d \n",i+1 ,pRand[i]);
-					} else if(i>=2){
-						printf( "\n %dつ目の値：%d \n",i+1 ,pRand[i]);
-					}
+					else if(flag_game == 2){
+						if(i == 0)
+							printf("\n %dつ目の値：＊\n",i+1);
+						else
+							printf( "\n %dつ目の値：%d \n",i+1 ,pRand[i]);
+					}//else_if
+					else if(flag_game == 3){
+						if(i < 2)
+							printf( "\n %dつ目の値：%d \n",i+1 ,pRand[i]);
+						else
+							printf("\n %dつ目の値：＊\n",i+1);
+					}//else_if
+							
 					sum = 0;
 					for(j=0; pRand[j]!='\0'; j++){
 						sum += pRand[j];
 					}
 					/* 合計が21を超えて、かつ、すでにAceを引いていた場合 */
 					if(sum > 21&&flag_ace==1){
-						printf("\n Ace 11 → 1\n");
+						if(flag_game == 1)
+							printf("\n Ace 11 → 1\n");
 						pRand[aceNum] = 1;//11を1にする
 						sum -= 10;//Aceを11から1に変えた分、合計を10減らす
 						flag_ace = 0;//フラグを下す
 					}
+					if(sum > 21&&flag_game == 1){
+						printf("\n 合計：%d\n",sum);
+						printf("\n 合計が２１を越えてしまった・・・・・・\n");
+						flag_21 = 1;
+						q = 0;
+						enterkey();
+					}//if
 					pSum = sum;//合計を移す、いるかどうかは考える
-					/* 3つ目の数字から合計の値を隠す場合はここを活用する */
-					if(i<2) {
-						printf( "\n 合計：%d \n",pSum);
-					} else if(i>=2) {
-						printf( "\n 合計：%d \n",pSum);
-					}
-					printf( "\n この値で勝負しますか？\n"
-							"\n 1.勝負する\n"
-							"\n 2.まだ足りない\n"
-							);
-					printf( "\n 入力：");
-					scanf("%d",&sele_2);
-					switch(sele_2){
-						case 1:
-							q = 0;
-							break;
-						case 2:
-							system("cls");//<windows.h>画面クリア
-							enterkey();
-							break;
-						default:
-						exit(0);
-					}
-				}
+					if(flag_21 == 0){
+						if(flag_game == 1||(flag_game==3&&i<2))
+							printf( "\n 合計：%d \n",pSum);
+						else
+							printf("\n 合計：＊\n");
+						printf( "\n この値で勝負しますか？\n"
+								"\n 1.勝負する\n"
+								"\n 2.まだ足りない\n"
+								);
+						printf( "\n 入力：");
+						scanf("%d",&sele_2);
+						switch(sele_2){
+							case 1:
+								q = 0;//ループ終了
+								break;
+							case 2:
+								system("cls");//<windows.h>画面クリア
+								enterkey();
+								break;
+							default:
+								exit(0);
+						}//switch
+					}//if_flag_21
+				}//for大きい
 				qqq = 1;//敵のループ条件
 				for(i=0; qqq!=0; i++){
 					srand((unsigned)time(NULL));
 					eRand[i] = rand()%13 + 1;
 					if(eRand[i]>=10&&eRand[i]<=13) eRand[i] = 10;
-					printf( "\n 相手の%dつ目の値：%d \n",i+1,eRand[i]);
+					if(flag_21 == 0){//playerが21を越えていた場合表示しない
+						printf( "\n 相手の%dつ目の値：%d \n",i+1,eRand[i]);
+					}
 					sum = 0;
 					for(j=0; eRand[j]!='\0'; j++){
 						sum += eRand[j];
 					}
 					eSum = sum;
-					enterkey();
 					if(eSum>17&&eSum<=21){
 						qqq = 0;//もう引かない
 					} else if(eSum>21) {
@@ -160,23 +212,27 @@ int main(void)
 						qqq = 0;//もう引かない
 					}
 				}
+				enterkey();
 				printf( "\n 自分：%d	相手：%d \n",pSum ,eSum);
 				if(pSum==eSum||pSum>21||((eSum>=1&&eSum<=21)&&eSum>pSum)){//player負けの条件
 					printf( "\n===============\n"
 							"\n 負け\n"
 							"\n===============\n"
 							);
+					printf("\n ディーラー「俺の勝ちだな」\n");
 					money -= bed_money;//掛け金分減る
 				} else {//負け以外勝ち
 					printf( "\n===============\n"
 							"\n 勝ち\n"
 							"\n===============\n"
 							);
+					printf("\n ディーラー「手加減はここまでだ・・・・・・」\n");
 					money += bed_money;//2倍に増える
 				}
 				enterkey();
 				break;
 			case 2:
+				printf("\n ディーラー「またこいよ」\n");
 				qq = 0;
 				break;
 			default:

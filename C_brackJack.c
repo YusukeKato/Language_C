@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+void high_low(int *, int *);//ハイ＆ロー関数
+void janken(int *, int *);//じゃんけん関数
 void enterkey(void);//enterkey処理のための関数
 
 /* ブラックジャック */
@@ -52,9 +54,17 @@ int main(void)
 		}
 		enterkey();//enterkey処理関数
 		/* ゲーム説明 */
-		printf( "\n ブラックジャック\n"
+		printf( "\n ＜ブラックジャック＞\n"
 				"\n 合計２１をめざせ！！\n"
-				"\n 買ったら２倍！！！\n"
+				"\n 勝ったら２倍！！！\n"
+				);
+		printf( "\n ＜じゃんけん＞\n"
+				"\n いたって普通のじゃんけん\n"
+				"\n 勝ったら３倍！！！\n"
+				);
+		printf( "\n ＜ハイ＆ロー＞\n"
+				"\n 大きいか小さいか選べ！！\n"
+				"\n 勝つごとに倍！！！\n"
 				);
 		enterkey();
 		/* ゲームをするかどうか */
@@ -65,16 +75,20 @@ int main(void)
 		printf( "\n 入力：");
 		scanf( "%d",&sele);
 		enterkey();
+		/* ゲームを選択 */
 		if(sele == 1){
 			printf( "\n ディーラー「どれにする？」\n"
 					"\n 1.BRACKJACK\n"
 					"\n 2.BRACKJACK 1枚目隠し\n"
 					"\n 3.BRACKJACK 3枚目から隠し\n"
+					"\n 4.じゃんけん\n"
+					"\n 5.ハイ＆ロー\n"
 					"\n 入力："
 					);
 			scanf("%d",&flag_game);
+			enterkey();
 		}//if
-		if(!(flag_game==1||flag_game==2||flag_game==3)){
+		if(!(flag_game==1||flag_game==2||flag_game==3||flag_game==4||flag_game==5)){
 			printf("\n ディーラー「それはないぜ」\n");
 			exit(0);
 		}//if
@@ -96,6 +110,13 @@ int main(void)
 					,money, bed_money
 					);
 		}//if
+		/* じゃんけん */
+		if(sele == 1&&flag_game == 4)
+			sele = 3;
+		/* ハイ＆ロー */
+		if(sele == 1&&flag_game == 5)
+			sele = 4;
+			
 		switch(sele){
 			case 1:
 				q = 1;
@@ -235,6 +256,12 @@ int main(void)
 				printf("\n ディーラー「またこいよ」\n");
 				qq = 0;
 				break;
+			case 3:
+				janken(&money,&bed_money);
+				break;
+			case 4:
+				high_low(&money, &bed_money);
+				break;
 			default:
 				exit(0);
 		}
@@ -266,6 +293,156 @@ int main(void)
 		}
 	}//while
 	return 0;
+}
+
+/* じゃんけん関数 */
+void janken(int *money, int *bed_money)
+{
+	int ran;
+	int sele;
+	int q;
+	char c;
+	
+	while(q!=0){
+		enterkey();
+		printf("\n ディーラー「何を出そうかな」\n");
+		printf( "\n 1.ぐー\n"
+				"\n 2.ぱー\n"
+				"\n 3.ちょき\n"
+				"\n 入力："
+				);
+		scanf("%d",&sele);
+		c = getchar();//入力のときのenterkey処理
+		enterkey();
+	
+		srand((unsigned)time(NULL));
+		ran = rand()%3 + 1;
+		
+		printf("\n 自分：%d	相手：%d \n",sele ,ran);
+		
+		if(sele==ran){
+			printf( "\n --- 引き分け ---\n");
+			printf("\n ディーラー「あいこだ」\n");
+		} else if((sele==1&&ran==3)||(sele==2&&ran==1)||(sele==3&&ran==2)) {
+			printf("\n !!! 勝った !!!\n\n");
+			printf("\n ディーラー「まだまだこれからだ」\n");
+			*money += *bed_money * 2;
+			q = 0;
+		} else {
+			printf("\n 負け......\n\n");
+			printf("\n ディーラー「相手にならないな」\n");
+			*money -= *bed_money;
+			q = 0;
+		}
+	}
+}
+
+/* ハイ＆ロー */
+void high_low(int *money, int *bed_money)
+{
+	int q;
+	int sele;
+	int sele_p;
+	int ran;
+	int ran_p;
+	int i = 0;
+	char c;
+	
+	while(q!=0){
+		if(*money < *bed_money){
+			for(;*money < *bed_money;){
+				printf("\n 金が足りねえな\n");
+				printf("\n 掛け金入力：");
+				scanf("%d",*bed_money);
+				enterkey();
+			}
+		}//if
+		i += 1;
+		printf( "\n お金：%d \n"
+				"\n 「ハイ＆ロー」(%d回目)\n"
+				"\n 掛け金：%d円\n"
+				"\n 勝ったら%d倍！！\n"
+				"\n 1.遊ぶ\n"
+				"\n 2.やめておく\n"
+				"\n 入力："
+				,*money ,i ,i * *bed_money,i*2
+				);
+		scanf( "%d",&sele);
+		enterkey();
+		switch(sele){
+			case 1:
+				printf( "\n 「ハイ＆ロー」\n"
+						"\n 基となる数字に対して\n"
+						"\n 自分の数字が大きいか小さいか当てる\n"
+						"\n 数は１～１０\n"
+						);
+				enterkey();
+				srand((unsigned)time(NULL));
+				ran = rand()%9 + 1;
+				if(ran == 1) ran = 5;
+				printf( "\n\n 基となる数字：%d \n",ran);
+				enterkey();
+				srand((unsigned)time(NULL));
+				ran_p = rand()%10 + 1;
+				printf( "\n あなたの数字：＊ \n");
+				enterkey();
+				printf( "\n あなたの数字は %d より上？下？（1～10）\n"
+						"\n 1.上\n"
+						"\n 2.下\n"
+						"\n 入力："
+						,ran
+						);
+				scanf("%d",&sele_p);
+				system("cls");
+				printf( "\n 基となる数字：%d \n"
+						"\n あなたの数字：%d \n"
+						,ran ,ran_p
+						);
+				enterkey();
+				if((ran>ran_p)&&sele_p==2) {
+					printf( "\n==============\n"
+							"\n   勝ち\n"
+							"\n==============\n"
+							);
+					printf("\n ディーラー「調子いいじゃねえか」\n");
+					*money += (i * *bed_money)*(i*2);
+				} else if((ran<ran_p)&&sele_p==1) {
+					printf( "\n==============\n"
+							"\n   勝ち\n"
+							"\n==============\n"
+							);
+					printf("\n ディーラー「なかなかやるじゃねえか」\n");
+					*money += (i * *bed_money)*(i*2);
+				} else if(ran==ran_p) {
+					printf( "\n 数字が同じなら負け\n");
+					printf( "\n==============\n"
+							"\n   負け\n"
+							"\n==============\n"
+							);
+					printf("\n ディーラー「どうした？ そんなもんか？」\n");	
+					*money -= i * *bed_money * (i*2);
+					i = 0;
+				} else {
+					printf( "\n==============\n"
+							"\n   負け\n"
+							"\n==============\n"
+							);
+					printf("\n ディーラー「調子悪いんじゃねえか？」\n");
+					*money -= i * *bed_money * (i*2);
+					i = 0;
+				}
+				if(*money <= 0){
+					printf("\n ディーラー「金がないなら帰りな」\n");
+					exit(0);
+				}//if
+				break;
+			case 2:
+				q = 0;
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 /* enterkey処理 */
